@@ -61,7 +61,7 @@ class DIASession(object):
             else:
                 self.dataSource.loadDataForExe(binary,';'.join(sympaths), None)
         except _ctypes.COMError as e:
-            hr = ctypes.c_uint(e[0]).value
+            hr = ctypes.c_uint(e.args[0]).value
             if hr == 0x806D0005: # E_PDB_NOT_FOUND
                 msg = "Unable to locate PDB"
             elif hr == 0x806D0012: # E_PDB_FORMAT
@@ -94,7 +94,7 @@ class DIASession(object):
             for line in self.iter_lineinfo_by_rva(func.relativeVirtualAddress, func.length):
                 self.logger.debug("[{:08X}-{:08X}] {}:{}:{}".format(
                     line.relativeVirtualAddress, line.relativeVirtualAddress+line.length,
-                    compiland_name(line.compiland), func.name, line.lineNumber))
+                    line.sourceFile.fileName, func.name, line.lineNumber))
                 yield func,line
 
 def main(argv):
@@ -171,7 +171,7 @@ else:
 
     def ida_add_lineinfo_comment(line, func=None):
         ea = idaapi.get_imagebase()+line.relativeVirtualAddress
-        cmt = "{}".format(compiland_name(line.compiland))
+        cmt = "{}".format(line.sourceFile.fileName)
         if func is not None:
             cmt += ":{}".format(func.name)
         cmt += ":{}".format(line.lineNumber)
